@@ -2,7 +2,6 @@ use std::fs;
 
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Failed to find file");
-    //let input = "A Y\nB X\nC Z".to_string();
 
     println!("{}", part_1(&input));
     println!("{}", part_2(&input));
