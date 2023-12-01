@@ -1,3 +1,5 @@
+use day_01::line_to_num;
+
 fn main() {
     let input = include_str!("input.txt");
     let output = part1(input);
@@ -5,24 +7,7 @@ fn main() {
 }
 
 fn part1(input: &str) -> u32 {
-    input
-        .lines()
-        .map(|line| {
-            let mut digits = line.chars().filter(|c| c.is_ascii_digit());
-            let tens = digits
-                .next()
-                .expect("There should be a digit in each line")
-                .to_digit(10)
-                .unwrap();
-
-            let units = digits
-                .last()
-                .map(|c| c.to_digit(10).unwrap())
-                .unwrap_or(tens);
-
-            (10 * tens) + units
-        })
-        .sum()
+    input.lines().map(line_to_num).sum()
 }
 
 #[cfg(test)]
