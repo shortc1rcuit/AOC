@@ -1,18 +1,19 @@
 use day_03::*;
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 fn main() {
     let input = include_str!("input.txt");
-    let output = part1(input);
+    let output = part2(input);
     println!("{}", output);
 }
 
-fn part1(input: &str) -> u32 {
-    let mut symbols: HashSet<(i16, i16)> = HashSet::new();
-    let mut numbers = Vec::new();
+fn part2(input: &str) -> u32 {
+    let mut numbers = HashMap::new();
+    let mut gears: Vec<(i16, i16)> = Vec::new();
 
     let mut state = ParseState::Else;
+    let mut id = 0;
 
     for (y, line) in input
         .lines()
@@ -31,11 +32,15 @@ fn part1(input: &str) -> u32 {
                 }
             } else {
                 if let ParseState::Number(start, number) = state {
-                    numbers.push(((start..x, y), number));
+                    for x in start..x {
+                        numbers.insert((x, y), (number, id));
+                    }
+
+                    id += 1;
                 }
 
-                if c != '.' {
-                    symbols.insert((x, y));
+                if c == '*' {
+                    gears.push((x, y));
                 }
 
                 ParseState::Else
@@ -45,7 +50,11 @@ fn part1(input: &str) -> u32 {
         }
 
         if let ParseState::Number(start, number) = state {
-            numbers.push(((start..x, y), number));
+            for x in start..x {
+                numbers.insert((x, y), (number, id));
+            }
+
+            id += 1;
 
             state = ParseState::Else;
         }
@@ -53,15 +62,20 @@ fn part1(input: &str) -> u32 {
 
     let mut sum = 0;
 
-    //Filter only gives a shared reference to x_range, but we need to mutate it so we can
-    //iterate over it. This is why we use a for loop.
-    for ((mut x_range, y), number) in numbers {
-        if x_range.any(|x| {
-            NEIGHBOURS
-                .iter()
-                .any(|neighbour| symbols.contains(&(x + neighbour.0, y + neighbour.1)))
-        }) {
-            sum += number;
+    for (gear_x, gear_y) in gears {
+        let mut neighbours = Vec::new();
+
+        for neighbour in NEIGHBOURS
+            .iter()
+            .filter_map(|neighbour| numbers.get(&(gear_x + neighbour.0, gear_y + neighbour.1)))
+        {
+            if !neighbours.contains(neighbour) {
+                neighbours.push(*neighbour)
+            }
+        }
+
+        if neighbours.len() == 2 {
+            sum += neighbours[0].0 * neighbours[1].0
         }
     }
 
@@ -70,11 +84,11 @@ fn part1(input: &str) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::part1;
+    use crate::part2;
 
     #[test]
-    fn test_part1() {
+    fn test_part2() {
         let input = include_str!("test.txt");
-        assert_eq!(part1(input), 4361);
+        assert_eq!(part2(input), 467835);
     }
 }
