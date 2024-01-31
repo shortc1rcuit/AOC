@@ -60,26 +60,25 @@ fn part2(input: &str) -> u32 {
         }
     }
 
-    let mut sum = 0;
+    gears
+        .iter()
+        .map(|(gear_x, gear_y)| {
+            let mut neighbours = Vec::new();
 
-    for (gear_x, gear_y) in gears {
-        let mut neighbours = Vec::new();
-
-        for neighbour in NEIGHBOURS
-            .iter()
-            .filter_map(|neighbour| numbers.get(&(gear_x + neighbour.0, gear_y + neighbour.1)))
-        {
-            if !neighbours.contains(neighbour) {
-                neighbours.push(*neighbour)
+            for neighbour in NEIGHBOURS
+                .iter()
+                .filter_map(|neighbour| numbers.get(&(gear_x + neighbour.0, gear_y + neighbour.1)))
+            {
+                if !neighbours.contains(neighbour) {
+                    neighbours.push(*neighbour)
+                }
             }
-        }
 
-        if neighbours.len() == 2 {
-            sum += neighbours[0].0 * neighbours[1].0
-        }
-    }
-
-    sum
+            neighbours
+        })
+        .filter(|neighbours| neighbours.len() == 2)
+        .map(|neighbours| neighbours[0].0 * neighbours[1].0)
+        .sum()
 }
 
 #[cfg(test)]
