@@ -31,14 +31,16 @@ fn part1(input: &str) -> u32 {
         let mut x = 0;
 
         for c in line.chars() {
-            state = if let Some(d) = c.to_digit(10) {
+            state = if let Some(digit) = c.to_digit(10) {
                 match state {
-                    ParseState::Number(start, n) => ParseState::Number(start, 10 * n + d),
-                    ParseState::Else => ParseState::Number(x, d),
+                    ParseState::Number(start, number) => {
+                        ParseState::Number(start, 10 * number + digit)
+                    }
+                    ParseState::Else => ParseState::Number(x, digit),
                 }
             } else {
-                if let ParseState::Number(start, n) = state {
-                    numbers.push(((start..x, y), n));
+                if let ParseState::Number(start, number) = state {
+                    numbers.push(((start..x, y), number));
                 }
 
                 if c != '.' {
@@ -51,29 +53,28 @@ fn part1(input: &str) -> u32 {
             x += 1;
         }
 
-        if let ParseState::Number(start, n) = state {
-            numbers.push(((start..x, y), n));
+        if let ParseState::Number(start, number) = state {
+            numbers.push(((start..x, y), number));
 
             state = ParseState::Else;
         }
     }
 
-    numbers
-        .into_iter()
-        //.filter(|((r, y), _)| r.iter().any(|x| NEIGHBOURS.iter().any(|(nx, ny)| symbols.contains(&(x + nx, y + ny)))))
-        .map(|((r, y), n)| {
-            (
-                n,
-                r.into_iter().any(|x| {
-                    NEIGHBOURS
-                        .iter()
-                        .any(|(nx, ny)| symbols.contains(&(x + nx, y + ny)))
-                }),
-            )
-        })
-        .filter(|(_, b)| *b)
-        .map(|(n, _)| n)
-        .sum()
+    let mut sum = 0;
+
+    //Filter only gives a shared reference to x_range, but we need to mutate it so we can
+    //iterate over it. This is why we use a for loop.
+    for ((mut x_range, y), number) in numbers {
+        if x_range.any(|x| {
+            NEIGHBOURS
+                .iter()
+                .any(|neighbor| symbols.contains(&(x + neighbor.0, y + neighbor.1)))
+        }) {
+            sum += number;
+        }
+    }
+
+    sum
 }
 
 enum ParseState {
