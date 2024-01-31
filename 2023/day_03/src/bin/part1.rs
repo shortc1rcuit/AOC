@@ -22,36 +22,30 @@ fn part1(input: &str) -> u32 {
     let mut numbers = Vec::new();
 
     let mut state = ParseState::Else;
-    let mut x = 0;
-    let mut y = 0;
 
-    for line in input.lines() {
+    for (y, line) in input
+        .lines()
+        .enumerate()
+        .map(|(y, line)| (y.try_into().unwrap(), line))
+    {
+        let mut x = 0;
+
         for c in line.chars() {
-            state = match state {
-                ParseState::Number(start, n) => {
-                    if let Some(d) = c.to_digit(10) {
-                        ParseState::Number(start, 10 * n + d)
-                    } else {
-                        numbers.push(((start..x, y), n));
-
-                        if c != '.' {
-                            symbols.insert((x, y));
-                        }
-
-                        ParseState::Else
-                    }
+            state = if let Some(d) = c.to_digit(10) {
+                match state {
+                    ParseState::Number(start, n) => ParseState::Number(start, 10 * n + d),
+                    ParseState::Else => ParseState::Number(x, d),
                 }
-                ParseState::Else => {
-                    if let Some(d) = c.to_digit(10) {
-                        ParseState::Number(x, d)
-                    } else {
-                        if c != '.' {
-                            symbols.insert((x, y));
-                        }
-
-                        ParseState::Else
-                    }
+            } else {
+                if let ParseState::Number(start, n) = state {
+                    numbers.push(((start..x, y), n));
                 }
+
+                if c != '.' {
+                    symbols.insert((x, y));
+                }
+
+                ParseState::Else
             };
 
             x += 1;
@@ -62,9 +56,6 @@ fn part1(input: &str) -> u32 {
 
             state = ParseState::Else;
         }
-
-        x = 0;
-        y += 1;
     }
 
     numbers
