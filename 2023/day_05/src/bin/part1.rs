@@ -7,7 +7,8 @@ fn main() {
 }
 
 fn part1(input: &str) -> u32 {
-    let (seeds, maps) = parse(input).unwrap().1;
+    let (input, seeds) = parse_seeds_as_starts(input).unwrap();
+    let maps = parse_maps(input).unwrap().1;
 
     seeds
         .into_iter()

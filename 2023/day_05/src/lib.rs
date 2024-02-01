@@ -6,13 +6,17 @@ use nom::{
     IResult,
 };
 
-pub fn parse(input: &str) -> IResult<&str, (Vec<u32>, Vec<Map>)> {
+pub fn parse_seeds_as_starts(input: &str) -> IResult<&str, Vec<u32>> {
     let (input, seeds) = preceded(tag("seeds: "), separated_list1(tag(" "), complete::u32))(input)?;
     let input = input.trim();
 
+    Ok((input, seeds))
+}
+
+pub fn parse_maps(input: &str) -> IResult<&str, Vec<Map>> {
     let (input, maps) = separated_list1(count(line_ending, 2), parse_map)(input)?;
 
-    Ok((input, (seeds, maps)))
+    Ok((input, maps))
 }
 
 fn parse_map(input: &str) -> IResult<&str, Map> {
@@ -40,9 +44,7 @@ pub struct Map {
 impl Map {
     pub fn new(mut map_parts: Vec<(Range, u32)>) -> Map {
         map_parts.sort_by_key(|k| k.0.start);
-        Map {
-            map_parts
-        }
+        Map { map_parts }
     }
 
     pub fn map(&self, input: u32) -> u32 {
