@@ -75,55 +75,38 @@ impl Map {
         let mut ranges = Vec::new();
 
         for (i_range, o_start) in self.map_parts.iter() {
-            match i_range.start.cmp(&input.start) {
-                std::cmp::Ordering::Less => {
-                    if i_range.contains(input.start) {
-                        ranges.push(Range::new(
-                            o_start + (input.start - i_range.start),
-                            input.size.min(i_range.size - (input.start - i_range.start)),
-                        ));
-
-                        input.size -= input.size.min(i_range.size - (input.start - i_range.start));
-
-                        if input.size == 0 {
-                            return ranges;
-                        }
-
-                        input.start = i_range.start + i_range.size;
-                    }
+            if input.contains(i_range.start) {
+                if input.start < i_range.start {
+                    ranges.push(Range::new(input.start, i_range.start - input.start));
+                    input.start = i_range.start;
+                    input.size -= i_range.start - input.start;
                 }
-                std::cmp::Ordering::Equal => {
-                    if input.size > i_range.size {
-                        ranges.push(Range::new(*o_start, i_range.size));
 
-                        input.start += i_range.size;
-                        input.size -= i_range.size;
-                    } else {
-                        ranges.push(Range::new(*o_start, input.size));
+                if input.size > i_range.size {
+                    ranges.push(Range::new(*o_start, i_range.size));
 
-                        return ranges;
-                    }
+                    input.start += i_range.size;
+                    input.size -= i_range.size;
+                } else {
+                    ranges.push(Range::new(*o_start, input.size));
+
+                    return ranges;
                 }
-                std::cmp::Ordering::Greater => {
-                    if input.contains(i_range.start) {
-                        ranges.push(Range::new(input.start, i_range.start - input.start));
-                        input.start = i_range.start;
-                        input.size -= i_range.start - input.start;
+            } else if i_range.contains(input.start) {
+                ranges.push(Range::new(
+                    o_start + (input.start - i_range.start),
+                    input.size.min(i_range.size - (input.start - i_range.start)),
+                ));
 
-                        if input.size > i_range.size {
-                            ranges.push(Range::new(*o_start, i_range.size));
+                input.size -= input.size.min(i_range.size - (input.start - i_range.start));
 
-                            input.start += i_range.size;
-                            input.size -= i_range.size;
-                        } else {
-                            ranges.push(Range::new(*o_start, input.size));
-
-                            return ranges;
-                        }
-                    } else {
-                        break;
-                    }
+                if input.size == 0 {
+                    return ranges;
                 }
+
+                input.start = i_range.start + i_range.size;
+            } else if i_range.start > input.start {
+                break;
             }
         }
 
