@@ -12,9 +12,7 @@ fn part1(input: &str) -> u64 {
     times
         .into_iter()
         .zip(distances)
-        .map(|(time, distance)| {
-            count_solutions(time as f64, distance as f64)
-        })
+        .map(|(time, distance)| count_solutions(time as f64, distance as f64))
         .product()
 }
 

@@ -1,6 +1,7 @@
 use nom::{
     bytes::complete::tag,
-    character::complete::{self, line_ending, space1},
+    character::complete::{self, digit1, line_ending, space1},
+    combinator::map_res,
     multi::separated_list1,
     sequence::{delimited, pair, preceded},
     IResult,
@@ -18,6 +19,26 @@ pub fn parse(input: &str) -> IResult<&str, (Vec<u64>, Vec<u64>)> {
     )(input)?;
 
     Ok((input, (times, distances)))
+}
+
+pub fn parse_bad_kerning(input: &str) -> IResult<&str, (u64, u64)> {
+    let (input, time) = map_res(
+        delimited(
+            pair(tag("Time:"), space1),
+            separated_list1(space1, digit1),
+            line_ending,
+        ),
+        |v| v.join("").parse::<u64>(),
+    )(input)?;
+    let (input, distance) = map_res(
+        preceded(
+            pair(tag("Distance:"), space1),
+            separated_list1(space1, digit1),
+        ),
+        |v| v.join("").parse::<u64>(),
+    )(input)?;
+
+    Ok((input, (time, distance)))
 }
 
 pub fn count_solutions(time: f64, distance: f64) -> u64 {
