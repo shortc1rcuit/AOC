@@ -10,28 +10,32 @@ use nom::{
 };
 
 fn main() {
-    let input = include_str!("test1.txt");
+    let input = include_str!("input.txt");
     let output = part1(input);
     println!("{}", output);
 }
 
 fn part1(input: &str) -> u32 {
-    let (instructions, network) = parse(input).unwrap().1;
+    let ParseOutput {
+        starts,
+        instructions,
+        network,
+    } = parse(input, |n| n == "AAA", |n| n == "ZZZ").unwrap().1;
 
-    let mut position = "AAA";
+    let mut position = starts[0];
     let mut step_count = 0;
 
     for instruction in instructions.into_iter().cycle() {
         step_count += 1;
 
-        let (left, right) = network.get(position).unwrap();
+        let (left, right) = network[position].1;
 
         position = match instruction {
             Instruction::Left => left,
             Instruction::Right => right,
         };
 
-        if position == "ZZZ" {
+        if network[position].0 {
             break;
         }
     }
@@ -39,17 +43,52 @@ fn part1(input: &str) -> u32 {
     step_count
 }
 
-type ParseOutput<'a> = IResult<&'a str, (Vec<Instruction>, HashMap<&'a str, (&'a str, &'a str)>)>;
+struct ParseOutput {
+    starts: Vec<usize>,
+    instructions: Vec<Instruction>,
+    network: Vec<(bool, (usize, usize))>,
+}
 
-fn parse(input: &str) -> ParseOutput {
+fn parse<F, G>(input: &str, mut is_start: F, mut is_end: G) -> IResult<&str, ParseOutput>
+where
+    F: FnMut(&str) -> bool,
+    G: FnMut(&str) -> bool,
+{
     let (input, instructions): (_, Vec<Instruction>) = parse_instructions(input)?;
+    let (input, name_network) = separated_list1(line_ending, parse_link)(input)?;
 
-    let (input, network) =
-        combinator::map(separated_list1(line_ending, parse_link), |v: Vec<_>| {
-            v.into_iter().collect::<HashMap<_, _>>()
-        })(input)?;
+    let mut name_map = HashMap::new();
+    let mut starts = Vec::new();
 
-    Ok((input, (instructions, network)))
+    for (i, (name, (_, _))) in name_network.iter().enumerate() {
+        name_map.insert(*name, i);
+
+        if is_start(name) {
+            starts.push(i)
+        }
+    }
+
+    let network = name_network
+        .into_iter()
+        .map(|(name, (left, right))| {
+            (
+                is_end(name),
+                (
+                    *name_map.get(&left).unwrap(),
+                    *name_map.get(&right).unwrap(),
+                ),
+            )
+        })
+        .collect();
+
+    Ok((
+        input,
+        ParseOutput {
+            starts,
+            instructions,
+            network,
+        },
+    ))
 }
 
 fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
